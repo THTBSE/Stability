@@ -15,7 +15,7 @@ public:
 	vec	  queryCenterOfMass();
 
 private:
-	//Base data 
+	//Basic data 
 	float volumes;
 	float area;
 	//center of mass
