@@ -2,19 +2,6 @@
 #include <algorithm>
 #include <cmath>
 
-template <typename T>
-static inline bool is_zero(T a)
-{
-	return fabs(a) < 1e-6;
-}
-
-//type of a & b must be float or double
-template <typename T>
-static inline bool is_equal(T a, T b)
-{
-	return is_zero(a-b);
-}
-
 class point_comp
 {
 public:
@@ -56,7 +43,7 @@ void geoToolkit::GrahamScan(vector<point>& PointSet,vector<point>& ch)
 	std::swap(PointSet[0],PointSet[base_index]);
 	std::sort(PointSet.begin()+1,PointSet.end(),polar_angle_comp(base_point));
 
-	if (PointSet.size() < 3)
+	if (PointSet.size() < 4)
 	{
 		ch.assign(PointSet.begin(),PointSet.end());
 		return;
@@ -81,3 +68,29 @@ void geoToolkit::GrahamScan(vector<point>& PointSet,vector<point>& ch)
 	}
 	return;
 }
+
+bool geoToolkit::insidePolygon(const point& pt, const vector<point>& polygon)
+{
+	if (polygon.size() < 3)
+		return false;
+
+	bool inside = false;
+	for (size_t i=0,j=polygon.size()-1; i < polygon.size(); j=i,i++)
+	{
+		vec U0(polygon[i]),U1(polygon[j]);
+
+		if (pt[1] < U1[1])
+		{
+			if (U0[1] <= pt[1])
+				if ((pt[1] - U0[1]) * (U1[0] - U0[0]) > (pt[0] - U0[0]) * (U1[1] - U0[1]))
+					inside = !inside;
+		}
+		else if (pt[1] < U0[1])
+		{
+			if ((pt[1] - U0[1]) * (U1[0] - U0[0]) < (pt[0] - U0[0]) * (U1[1] - U0[1]))
+				inside = !inside;
+		}
+	}
+	return inside;
+}
+

@@ -14,6 +14,7 @@ Can write: PLY (triangle mesh and range grid), OFF, OBJ, RAY, SM, STL, C++, DAE
 #include <cerrno>
 #include <cctype>
 #include <cstdarg>
+#include <map>
 #include "../include/TriMesh.h"
 #include "../include/strutil.h"
 using namespace std;
@@ -826,7 +827,22 @@ static bool read_sm(FILE *f, TriMesh *mesh)
 	return true;
 }
 
+class vtx_comp
+{
+public:
+	bool operator() (const point& a,const point& b) const
+	{
+		if (a[0] < b[0]) return true;
+		if (a[0] > b[0]) return false;
+		if (a[1] < b[1]) return true;
+		if (a[1] > b[1]) return false;
+		if (a[2] < b[2]) return true;
+		if (a[2] > b[2]) return false;
+		return false;
+	}
+};
 
+typedef map<point,int,vtx_comp> vtxMap;
 // Read a binary STL file
 static bool read_stl(FILE *f, TriMesh *mesh)
 {
@@ -856,6 +872,39 @@ static bool read_stl(FILE *f, TriMesh *mesh)
 		mesh->faces.push_back(TriMesh::Face(v, v+1, v+2));
 		unsigned char att[2];
 		COND_READ(true, att, 2);
+	}
+
+	//remove duplicated vertices for triangle mesh.
+	vtxMap removeDupe;
+	vtxMap::iterator it_rmdp;
+	map<int,point> orderVtx;
+	vector<TriMesh::Face>& trif = mesh->faces;
+	vector<point>& vtx = mesh->vertices;
+	int kk = 0;
+	for (size_t i=0; i<trif.size(); i++)
+	{
+		for (int j=0; j<3; j++)
+		{
+			it_rmdp = removeDupe.find(vtx[trif[i][j]]);
+			if (it_rmdp == removeDupe.end())
+			{
+				removeDupe.insert(make_pair(vtx[trif[i][j]],kk));
+				orderVtx.insert(make_pair(kk,vtx[trif[i][j]]));
+				trif[i][j] = kk;
+				kk++;
+			}
+			else
+			{
+				trif[i][j] = it_rmdp->second;
+			}
+		}
+	}
+
+	mesh->vertices.clear();
+	map<int,point>::iterator vit = orderVtx.begin();
+	for (; vit != orderVtx.end(); ++vit)
+	{
+		mesh->vertices.push_back(vit->second);
 	}
 	return true;
 }
