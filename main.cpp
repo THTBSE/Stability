@@ -6,6 +6,7 @@ using namespace trimesh;
 
 int main(int argc,char* argv[])
 {
+	
 	TriMesh* mesh;
 	mesh = mesh->read("Head_init.stl");
 	stability isStable(mesh);
